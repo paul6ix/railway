@@ -2,6 +2,7 @@ import { buildApp } from './app.js';
 import { createDiscordBot } from './bot/client.js';
 import { createPrismaClient } from './db.js';
 import { EnvError, loadEnv } from './env.js';
+import { DEFAULT_WEB_DIST_DIR } from './http/static.js';
 import { createMessageBus } from './messages/bus.js';
 import { createPrismaMessageRepo } from './messages/repository.js';
 import { createMessageService } from './messages/service.js';
@@ -12,7 +13,7 @@ async function main(): Promise<void> {
   const repo = createPrismaMessageRepo(prisma);
   // `app` and `bot` are referenced lazily below: these callbacks only run after both exist.
   const bus = createMessageBus((error) => app.log.error({ err: error }, 'message listener failed'));
-  const app = buildApp(
+  const app = await buildApp(
     {
       channelId: env.DISCORD_CHANNEL_ID,
       repo,
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
         isDiscordReady: () => bot.isReady(),
       },
     },
-    { logLevel: env.LOG_LEVEL },
+    { logLevel: env.LOG_LEVEL, webDistDir: env.WEB_DIST_DIR ?? DEFAULT_WEB_DIST_DIR },
   );
 
   const service = createMessageService({ repo, bus });

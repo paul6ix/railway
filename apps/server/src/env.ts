@@ -7,6 +7,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   DISCORD_TOKEN: z.string().min(1),
   DISCORD_CHANNEL_ID: z.string().regex(/^\d{17,20}$/, 'must be a Discord channel snowflake ID'),
+  /** Override where the built web app is served from (defaults to apps/web/dist). */
+  WEB_DIST_DIR: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

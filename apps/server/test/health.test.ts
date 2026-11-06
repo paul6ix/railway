@@ -9,21 +9,21 @@ describe('GET /api/health', () => {
   });
 
   it('returns 200 ok when database and Discord are up', async () => {
-    ({ app } = makeTestApp());
+    ({ app } = await makeTestApp());
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({ status: 'ok', database: 'ok', discord: 'connected' });
   });
 
   it('stays 200 but degraded while Discord is disconnected', async () => {
-    ({ app } = makeTestApp({ health: { isDiscordReady: () => false } }));
+    ({ app } = await makeTestApp({ health: { isDiscordReady: () => false } }));
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({ status: 'degraded', discord: 'disconnected' });
   });
 
   it('returns 503 when the database check fails', async () => {
-    ({ app } = makeTestApp({
+    ({ app } = await makeTestApp({
       health: {
         checkDatabase: async () => {
           throw new Error('connection refused');

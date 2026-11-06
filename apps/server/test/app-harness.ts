@@ -6,12 +6,12 @@ import type { HealthChecks } from '../src/http/routes/health.js';
 import { createMessageBus } from '../src/messages/bus.js';
 import { CHANNEL_ID, makeFakeRepo } from './fakes.js';
 
-export function makeTestApp(
-  options: { heartbeatMs?: number; health?: Partial<HealthChecks> } = {},
+export async function makeTestApp(
+  options: { heartbeatMs?: number; health?: Partial<HealthChecks>; webDistDir?: string } = {},
 ) {
   const repo = makeFakeRepo();
   const bus = createMessageBus();
-  const app = buildApp(
+  const app = await buildApp(
     {
       channelId: CHANNEL_ID,
       repo,
@@ -22,7 +22,11 @@ export function makeTestApp(
         ...options.health,
       },
     },
-    { logLevel: 'silent', heartbeatMs: options.heartbeatMs ?? 60_000 },
+    {
+      logLevel: 'silent',
+      heartbeatMs: options.heartbeatMs ?? 60_000,
+      webDistDir: options.webDistDir,
+    },
   );
   return { app, repo, bus };
 }

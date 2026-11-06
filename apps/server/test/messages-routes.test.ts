@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { makeTestApp, SseClient } from './app-harness.js';
 import { makeChatMessage } from './fakes.js';
 
-type TestApp = ReturnType<typeof makeTestApp>;
+type TestApp = Awaited<ReturnType<typeof makeTestApp>>;
 
 const ids = ['99999999999999990', '99999999999999999', '100000000000000000', '100000000000000005'];
 
@@ -14,7 +14,7 @@ describe('GET /api/messages', () => {
   });
 
   it('returns the newest messages oldest-first, defaulting to 50', async () => {
-    ctx = makeTestApp();
+    ctx = await makeTestApp();
     for (const id of ids) await ctx.repo.upsert(makeChatMessage(id));
     const res = await ctx.app.inject({ method: 'GET', url: '/api/messages?limit=3' });
     expect(res.statusCode).toBe(200);
@@ -22,7 +22,7 @@ describe('GET /api/messages', () => {
   });
 
   it('pages back with before', async () => {
-    ctx = makeTestApp();
+    ctx = await makeTestApp();
     for (const id of ids) await ctx.repo.upsert(makeChatMessage(id));
     const res = await ctx.app.inject({ method: 'GET', url: `/api/messages?before=${ids[2]}` });
     expect(res.json().map((m: { id: string }) => m.id)).toEqual(ids.slice(0, 2));
@@ -31,7 +31,7 @@ describe('GET /api/messages', () => {
   it.each(['limit=0', 'limit=101', 'limit=abc', 'before=not-a-snowflake'])(
     'rejects invalid query %s with 400',
     async (query) => {
-      ctx = makeTestApp();
+      ctx = await makeTestApp();
       const res = await ctx.app.inject({ method: 'GET', url: `/api/messages?${query}` });
       expect(res.statusCode).toBe(400);
     },
@@ -47,7 +47,7 @@ describe('GET /api/messages/stream', () => {
   });
 
   async function start(options?: { heartbeatMs?: number }) {
-    ctx = makeTestApp(options);
+    ctx = await makeTestApp(options);
     await ctx.app.listen({ host: '127.0.0.1', port: 0 });
     return ctx;
   }
