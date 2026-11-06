@@ -8,11 +8,26 @@ import { createMessageService } from './messages/service.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const app = buildApp({ logLevel: env.LOG_LEVEL });
-
   const prisma = createPrismaClient(env.DATABASE_URL);
   const repo = createPrismaMessageRepo(prisma);
+  // `app` and `bot` are referenced lazily below: these callbacks only run after both exist.
   const bus = createMessageBus((error) => app.log.error({ err: error }, 'message listener failed'));
+  const app = buildApp(
+    {
+      channelId: env.DISCORD_CHANNEL_ID,
+      repo,
+      bus,
+      health: {
+        checkDatabase: async () => {
+          await prisma.$queryRaw`SELECT 1`;
+          return true;
+        },
+        isDiscordReady: () => bot.isReady(),
+      },
+    },
+    { logLevel: env.LOG_LEVEL },
+  );
+
   const service = createMessageService({ repo, bus });
   const bot = createDiscordBot({
     token: env.DISCORD_TOKEN,

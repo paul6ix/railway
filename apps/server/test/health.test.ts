@@ -1,15 +1,37 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { buildApp } from '../src/app.js';
+import type { FastifyInstance } from 'fastify';
+import { makeTestApp } from './app-harness.js';
 
 describe('GET /api/health', () => {
-  const app = buildApp({ logLevel: 'silent' });
+  let app: FastifyInstance | undefined;
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
-  it('returns 200 with status ok', async () => {
+  it('returns 200 ok when database and Discord are up', async () => {
+    ({ app } = makeTestApp());
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toMatchObject({ status: 'ok' });
+    expect(res.json()).toMatchObject({ status: 'ok', database: 'ok', discord: 'connected' });
+  });
+
+  it('stays 200 but degraded while Discord is disconnected', async () => {
+    ({ app } = makeTestApp({ health: { isDiscordReady: () => false } }));
+    const res = await app.inject({ method: 'GET', url: '/api/health' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ status: 'degraded', discord: 'disconnected' });
+  });
+
+  it('returns 503 when the database check fails', async () => {
+    ({ app } = makeTestApp({
+      health: {
+        checkDatabase: async () => {
+          throw new Error('connection refused');
+        },
+      },
+    }));
+    const res = await app.inject({ method: 'GET', url: '/api/health' });
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toMatchObject({ status: 'degraded', database: 'error' });
   });
 });
