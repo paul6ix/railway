@@ -114,6 +114,26 @@ describe('GET /api/messages/stream', () => {
     expect(client.events.map((e) => e.id)).toEqual([ids[1], ids[2]]);
   });
 
+  it('streams edits and deletes without moving the resume cursor', async () => {
+    const { app, bus } = await start();
+    client = await SseClient.connect(app, '/api/messages/stream');
+    await client.waitFor(() => bus.listenerCount() === 1);
+
+    const message = makeChatMessage(ids[3]!);
+    bus.publish({ name: STREAM_EVENTS.created, message });
+    bus.publish({ name: STREAM_EVENTS.updated, message: { ...message, content: 'edited' } });
+    bus.publish({
+      name: STREAM_EVENTS.deleted,
+      message: { ...message, content: '', deletedAt: '2026-11-06T11:00:00.000Z' },
+    });
+    await client.waitFor((c) => c.events.length === 3);
+    expect(client.events.map((e) => [e.event, e.id])).toEqual([
+      ['message.created', ids[3]],
+      ['message.updated', undefined],
+      ['message.deleted', undefined],
+    ]);
+  });
+
   it('sends heartbeat comments', async () => {
     const { app } = await start({ heartbeatMs: 20 });
     client = await SseClient.connect(app, '/api/messages/stream');

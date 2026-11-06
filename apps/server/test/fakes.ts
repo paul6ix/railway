@@ -81,6 +81,25 @@ export function makeFakeRepo(): MessageRepo & { rows: Map<string, ChatMessage> }
       const all = sorted(channelId).filter((m) => !before || BigInt(m.id) < BigInt(before));
       return all.slice(-limit);
     },
+    async updateIfExists(message) {
+      const existing = rows.get(message.id);
+      if (!existing || existing.deletedAt) return null;
+      const updated = { ...existing, ...message, createdAt: existing.createdAt, deletedAt: null };
+      rows.set(message.id, updated);
+      return updated;
+    },
+    async markDeleted(id, deletedAt) {
+      const existing = rows.get(id);
+      if (!existing || existing.deletedAt) return null;
+      const deleted = {
+        ...existing,
+        content: '',
+        attachments: [],
+        deletedAt: deletedAt.toISOString(),
+      };
+      rows.set(id, deleted);
+      return deleted;
+    },
     async listAfter({ channelId, after, limit }) {
       return sorted(channelId)
         .filter((m) => BigInt(m.id) > BigInt(after))

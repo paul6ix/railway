@@ -23,6 +23,13 @@ export interface MessageRepo {
   listRecent(options: ListRecentOptions): Promise<ChatMessage[]>;
   /** Messages newer than `after`, oldest first, capped at `limit`. */
   listAfter(options: ListAfterOptions): Promise<ChatMessage[]>;
+  /** Apply an edit to a message we already store. Returns null if we never stored it. */
+  updateIfExists(message: ChatMessage): Promise<ChatMessage | null>;
+  /**
+   * Tombstone a message: keep the row (so ids and ordering stay stable) but drop its content,
+   * since the author removed it. Returns null if we never stored it.
+   */
+  markDeleted(id: string, deletedAt: Date): Promise<ChatMessage | null>;
 }
 
 const attachmentsSchema = z.array(attachmentSchema);
@@ -76,6 +83,32 @@ export function createPrismaMessageRepo(prisma: PrismaClient): MessageRepo {
         take: limit,
       });
       return rows.reverse().map(toChatMessage);
+    },
+
+    async updateIfExists(message) {
+      const { count } = await prisma.message.updateMany({
+        where: { id: BigInt(message.id), deletedAt: null },
+        data: {
+          authorName: message.authorName,
+          authorAvatarUrl: message.authorAvatarUrl,
+          content: message.content,
+          attachments: message.attachments as Prisma.InputJsonValue,
+          editedAt: message.editedAt ? new Date(message.editedAt) : null,
+        },
+      });
+      if (count === 0) return null;
+      const row = await prisma.message.findUnique({ where: { id: BigInt(message.id) } });
+      return row ? toChatMessage(row) : null;
+    },
+
+    async markDeleted(id, deletedAt) {
+      const { count } = await prisma.message.updateMany({
+        where: { id: BigInt(id), deletedAt: null },
+        data: { deletedAt, content: '', attachments: [] },
+      });
+      if (count === 0) return null;
+      const row = await prisma.message.findUnique({ where: { id: BigInt(id) } });
+      return row ? toChatMessage(row) : null;
     },
 
     async listAfter({ channelId, after, limit }) {

@@ -1,7 +1,11 @@
-import { Client, Events, GatewayIntentBits, type Message } from 'discord.js';
+import { Client, Events, GatewayIntentBits, Partials, type Message } from 'discord.js';
 import type { Logger } from '../logger.js';
 import type { MessageService } from '../messages/service.js';
-import { createMessageCreateHandler } from './handler.js';
+import {
+  createMessageCreateHandler,
+  createMessageDeleteHandler,
+  createMessageUpdateHandler,
+} from './handler.js';
 import { toChatMessage } from './mapper.js';
 
 /** How many recent messages to pull from Discord on startup to cover downtime. Discord's max per request. */
@@ -27,9 +31,14 @@ export function createDiscordBot(deps: DiscordBotDeps): DiscordBot {
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
     ],
+    // Without this, edits/deletes of messages not in discord.js's cache (e.g. sent before
+    // the bot started) are silently dropped. With it we get a partial carrying at least the id.
+    partials: [Partials.Message],
   });
 
   const onMessageCreate = createMessageCreateHandler(deps);
+  const onMessageUpdate = createMessageUpdateHandler(deps);
+  const onMessageDelete = createMessageDeleteHandler(deps);
 
   async function backfill(): Promise<void> {
     const channel = await client.channels.fetch(deps.channelId);
@@ -54,6 +63,18 @@ export function createDiscordBot(deps: DiscordBotDeps): DiscordBot {
   });
 
   client.on(Events.MessageCreate, (message: Message) => void onMessageCreate(message));
+  client.on(Events.MessageUpdate, (_old, updated) => {
+    if (updated.channelId !== deps.channelId) return;
+    // A partial only has ids; fetch the full message before mapping it.
+    const full = updated.partial ? updated.fetch() : Promise.resolve(updated);
+    full.then(onMessageUpdate, (error: unknown) =>
+      deps.logger.warn({ err: error, messageId: updated.id }, 'could not fetch edited message'),
+    );
+  });
+  client.on(Events.MessageDelete, (message) => void onMessageDelete(message));
+  client.on(Events.MessageBulkDelete, (messages) => {
+    for (const message of messages.values()) void onMessageDelete(message);
+  });
   client.on(Events.Error, (error) => deps.logger.error({ err: error }, 'discord client error'));
   client.on(Events.Warn, (warning) => deps.logger.warn({ warning }, 'discord client warning'));
 

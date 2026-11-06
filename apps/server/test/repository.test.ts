@@ -105,4 +105,45 @@ describe.skipIf(!testDatabaseUrl)('PrismaMessageRepo (integration)', () => {
     ]);
     expect(await repo.listAfter({ channelId: CHANNEL, after: ids[0]!, limit: 10 })).toEqual([]);
   });
+
+  it('updateIfExists edits a stored message and ignores unknown ones', async () => {
+    const message = makeMessage(ids[0]!);
+    await repo.upsert(message);
+
+    const edited = { ...message, content: 'edited', editedAt: '2026-11-06T10:05:00.000Z' };
+    expect(await repo.updateIfExists(edited)).toEqual(edited);
+    expect(await repo.updateIfExists(makeMessage(ids[1]!))).toBeNull();
+    expect((await repo.listRecent({ channelId: CHANNEL, limit: 10 })).map((m) => m.id)).toEqual([
+      ids[0],
+    ]);
+  });
+
+  it('markDeleted tombstones the row, dropping content, and is a no-op the second time', async () => {
+    await repo.upsert(
+      makeMessage(ids[0]!, {
+        attachments: [
+          {
+            id: '300000000000000001',
+            name: 'a.png',
+            url: 'https://cdn.x/a.png',
+            contentType: 'image/png',
+            size: 1,
+          },
+        ],
+      }),
+    );
+    const deletedAt = new Date('2026-11-06T11:00:00.000Z');
+
+    const deleted = await repo.markDeleted(ids[0]!, deletedAt);
+    expect(deleted).toMatchObject({
+      id: ids[0],
+      content: '',
+      attachments: [],
+      deletedAt: deletedAt.toISOString(),
+    });
+    expect(await repo.markDeleted(ids[0]!, deletedAt)).toBeNull();
+    expect(await repo.markDeleted(ids[1]!, deletedAt)).toBeNull();
+    // Edits can't resurrect a deleted message.
+    expect(await repo.updateIfExists(makeMessage(ids[0]!, { content: 'zombie' }))).toBeNull();
+  });
 });

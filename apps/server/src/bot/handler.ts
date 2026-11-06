@@ -45,3 +45,27 @@ export function createMessageCreateHandler(deps: MessageHandlerDeps) {
     }
   };
 }
+
+/** Handles `messageUpdate` once the message is fully fetched. Never throws. */
+export function createMessageUpdateHandler(deps: MessageHandlerDeps) {
+  return async function onMessageUpdate(message: DiscordMessageLike): Promise<void> {
+    if (message.channelId !== deps.channelId || message.system) return;
+    try {
+      await deps.service.applyEdit(toChatMessage(message));
+    } catch (error) {
+      deps.logger.error({ err: error, messageId: message.id }, 'failed to apply message edit');
+    }
+  };
+}
+
+/** Handles `messageDelete` (and each id of `messageDeleteBulk`). Only ids are needed. Never throws. */
+export function createMessageDeleteHandler(deps: MessageHandlerDeps) {
+  return async function onMessageDelete(message: { id: string; channelId: string }): Promise<void> {
+    if (message.channelId !== deps.channelId) return;
+    try {
+      await deps.service.applyDelete(message.id);
+    } catch (error) {
+      deps.logger.error({ err: error, messageId: message.id }, 'failed to apply message delete');
+    }
+  };
+}

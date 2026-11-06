@@ -39,6 +39,37 @@ describe('MessageService', () => {
   });
 });
 
+describe('MessageService edits and deletes', () => {
+  it('publishes message.updated for edits to stored messages only', async () => {
+    const { events, service } = setup();
+    const message = makeChatMessage('300000000000000001');
+    await service.ingest(message);
+    events.length = 0;
+
+    await service.applyEdit({ ...message, content: 'edited' });
+    await service.applyEdit(makeChatMessage('300000000000000099'));
+    expect(events).toEqual([
+      { name: 'message.updated', message: { ...message, content: 'edited' } },
+    ]);
+  });
+
+  it('publishes message.deleted with content removed, once', async () => {
+    const { events, service } = setup();
+    await service.ingest(makeChatMessage('300000000000000001'));
+    events.length = 0;
+
+    const at = new Date('2026-11-06T11:00:00.000Z');
+    await service.applyDelete('300000000000000001', at);
+    await service.applyDelete('300000000000000001', at);
+    await service.applyDelete('300000000000000099', at);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      name: 'message.deleted',
+      message: { id: '300000000000000001', content: '', deletedAt: at.toISOString() },
+    });
+  });
+});
+
 describe('MessageBus', () => {
   it('stops delivering after unsubscribe', () => {
     const bus = createMessageBus();
