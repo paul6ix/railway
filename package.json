@@ -1,0 +1,28 @@
+{
+  "name": "discord-live-stream",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @app/shared build && pnpm --parallel --filter @app/shared --filter @app/server --filter @app/web dev",
+    "build": "pnpm --filter @app/shared build && pnpm --filter @app/web build && pnpm --filter @app/server build",
+    "start": "pnpm --filter @app/server start",
+    "test": "pnpm --filter @app/shared build && pnpm -r test",
+    "typecheck": "pnpm --filter @app/shared build && pnpm -r typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.2"
+  }
+}

@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// One Discord message from the watched channel.
+/// `id` is the Discord snowflake stored as BIGINT: snowflakes increase with time, so ordering
+/// and "everything after X" (SSE replay) are plain integer comparisons on the primary key.
+model Message {
+  id              BigInt    @id
+  channelId       BigInt    @map("channel_id")
+  authorId        BigInt    @map("author_id")
+  authorName      String    @map("author_name")
+  authorAvatarUrl String?   @map("author_avatar_url")
+  content         String
+  /// Attachment[] from @app/shared
+  attachments     Json      @default("[]")
+  createdAt       DateTime  @map("created_at") @db.Timestamptz(3)
+  editedAt        DateTime? @map("edited_at") @db.Timestamptz(3)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  @@index([channelId, id])
+  @@map("messages")
+}
