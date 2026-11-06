@@ -1,11 +1,15 @@
 import { buildApp } from './app.js';
 import { createDiscordBot } from './bot/client.js';
 import { createPrismaClient } from './db.js';
-import { EnvError, loadEnv } from './env.js';
+import { loadEnv } from './env.js';
 import { DEFAULT_WEB_DIST_DIR } from './http/static.js';
 import { createMessageBus } from './messages/bus.js';
 import { createPrismaMessageRepo } from './messages/repository.js';
 import { createMessageService } from './messages/service.js';
+import { describeStartupError } from './startup-errors.js';
+
+/** Railway sends SIGTERM and kills the container shortly after; don't let cleanup hang past that. */
+const SHUTDOWN_TIMEOUT_MS = 5000;
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -39,10 +43,20 @@ async function main(): Promise<void> {
 
   const shutdown = async (signal: string) => {
     app.log.info({ signal }, 'shutting down');
-    await app.close();
-    await bot.stop();
-    await prisma.$disconnect();
-    process.exit(0);
+    const forceExit = setTimeout(() => {
+      app.log.error('shutdown timed out; exiting');
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS);
+    forceExit.unref();
+    try {
+      await app.close(); // also ends open SSE streams (preClose hook)
+      await bot.stop();
+      await prisma.$disconnect();
+      process.exit(0);
+    } catch (error) {
+      app.log.error({ err: error }, 'error during shutdown');
+      process.exit(1);
+    }
   };
   process.once('SIGTERM', () => void shutdown('SIGTERM'));
   process.once('SIGINT', () => void shutdown('SIGINT'));
@@ -52,10 +66,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  if (error instanceof EnvError) {
-    console.error(error.message);
-  } else {
-    console.error(error);
-  }
+  // Fail fast on bad configuration: on Railway a crashing deploy fails its healthcheck,
+  // so the previous healthy deployment keeps serving instead of a half-working one.
+  console.error(describeStartupError(error) ?? error);
   process.exit(1);
 });
