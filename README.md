@@ -5,7 +5,6 @@ A Discord bot that mirrors one Discord channel into a web page in real time. Pos
 **Stack:** TypeScript throughout. Node 22 + Fastify + discord.js on the back end, React + Vite on the front end, Prisma + PostgreSQL for storage, organised as a pnpm monorepo and deployed to Railway as a single service.
 
 - Live deployment: _add the Railway URL here_
-- Spec and task breakdown: [`SPEC.md`](SPEC.md), [`tasks/`](tasks)
 
 ---
 

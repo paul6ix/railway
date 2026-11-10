@@ -8,3 +8,10 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+
+# Planning and development notes (kept locally, not committed)
+*.md
+!README.md
+tasks/
+.claude/
+scratchpad/
