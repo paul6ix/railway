@@ -14,7 +14,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe('App', () => {
   it('renders the header and connection status', async () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: '# Discord Live Stream' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Discord Live Stream' })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Connecting…');
     expect(await screen.findByText(/No messages yet/)).toBeInTheDocument();
   });

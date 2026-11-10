@@ -1,31 +1,56 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   font-family:
+    'Inter',
     system-ui,
     -apple-system,
     'Segoe UI',
     Roboto,
     sans-serif;
-  --bg: #ffffff;
-  --bg-elevated: #f2f3f5;
-  --bg-hover: #f5f6f7;
-  --fg: #2e3338;
-  --muted: #5c6370;
-  --border: #e3e5e8;
-  --accent: #5865f2;
-  --ok: #23a55a;
-  --warn: #f0b232;
-  --err: #da373c;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+
+  --page: #eef0f4;
+  --surface: #ffffff;
+  --surface-2: #f6f7f9;
+  --hover: #f3f4f7;
+  --fg: #1d2129;
+  --fg-soft: #3a404b;
+  --muted: #6b7280;
+  --border: #e3e6eb;
+  --accent: #5b62e8;
+  --accent-soft: rgb(91 98 232 / 0.12);
+  --ok: #1f9d55;
+  --ok-soft: rgb(31 157 85 / 0.12);
+  --warn: #c58a0a;
+  --warn-soft: rgb(197 138 10 / 0.14);
+  --err: #d23a3f;
+  --err-soft: rgb(210 58 63 / 0.12);
+  --shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 8px 24px rgb(16 24 40 / 0.08);
+  --avatar-l: 45%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #313338;
-    --bg-elevated: #2b2d31;
-    --bg-hover: #2e3035;
-    --fg: #dbdee1;
-    --muted: #949ba4;
-    --border: #3f4147;
+    color-scheme: dark;
+    --page: #0c0e12;
+    --surface: #15181e;
+    --surface-2: #1b1f26;
+    --hover: #1a1d24;
+    --fg: #e7e9ee;
+    --fg-soft: #c9cdd6;
+    --muted: #8c94a3;
+    --border: #262b34;
+    --accent: #7c83ff;
+    --accent-soft: rgb(124 131 255 / 0.16);
+    --ok: #3ccf7a;
+    --ok-soft: rgb(60 207 122 / 0.14);
+    --warn: #f2b84b;
+    --warn-soft: rgb(242 184 75 / 0.14);
+    --err: #ff6b6f;
+    --err-soft: rgb(255 107 111 / 0.14);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px rgb(0 0 0 / 0.35);
+    --avatar-l: 55%;
   }
 }
 
@@ -41,16 +66,39 @@ body,
 }
 
 body {
-  background: var(--bg);
+  background: var(--page);
   color: var(--fg);
+}
+
+/* ---------- Shell ---------- */
+
+.shell {
+  height: 100%;
+  padding: 24px 16px;
 }
 
 .app {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-width: 900px;
+  max-width: 860px;
   margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding: 0;
+  }
+  .app {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
 .app__header {
@@ -58,38 +106,109 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg);
 }
 
-.app__header h1 {
+.app__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app__mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.app__title {
   margin: 0;
   font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
+
+.app__subtitle {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app__footer {
+  padding: 8px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* ---------- Connection status ---------- */
 
 .status {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: var(--muted);
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .status__dot {
+  position: relative;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--warn);
+  background: currentColor;
 }
 
-.status--live .status__dot {
-  background: var(--ok);
+.status--live {
+  background: var(--ok-soft);
+  color: var(--ok);
 }
 
-.status--error .status__dot {
-  background: var(--err);
+.status--live .status__dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s ease-out infinite;
 }
+
+.status--error {
+  background: var(--err-soft);
+  color: var(--err);
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* ---------- Feed ---------- */
 
 .feed {
   position: relative;
@@ -98,9 +217,18 @@ body {
 }
 
 .feed__scroll {
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  padding: 8px 0 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Pushes messages to the bottom when there are only a few, like a chat. */
+.feed__content {
+  margin-top: auto;
+  padding: 12px 0 16px;
 }
 
 .feed__list {
@@ -110,20 +238,54 @@ body {
 }
 
 .feed__empty {
-  padding: 24px 16px;
-  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
   text-align: center;
+}
+
+.feed__empty-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.feed__empty-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.feed__empty-text {
+  max-width: 320px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .feed__older {
   display: block;
-  margin: 8px auto;
-  padding: 6px 12px;
+  margin: 4px auto 12px;
+  padding: 7px 14px;
   border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-elevated);
-  color: var(--fg);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--fg-soft);
+  font: inherit;
+  font-size: 0.82rem;
   cursor: pointer;
+}
+
+.feed__older:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .feed__older:disabled {
@@ -134,90 +296,228 @@ body {
 .feed__jump {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: 16px;
   transform: translateX(-50%);
-  padding: 6px 14px;
+  padding: 8px 16px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 999px;
   background: var(--accent);
   color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
 }
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.day-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 20px 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.day-divider::before,
+.day-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ---------- Message ---------- */
 
 .message {
   display: flex;
-  gap: 12px;
-  padding: 6px 16px;
+  gap: 14px;
+  padding: 2px 20px;
+  animation: enter 0.25s ease-out;
+}
+
+.message--group-start {
+  margin-top: 12px;
+  padding-top: 4px;
 }
 
 .message:hover {
-  background: var(--bg-hover);
+  background: var(--hover);
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.message__gutter {
+  flex: none;
+  width: 40px;
+}
+
+.message--continued {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
+.message--continued .message__content {
+  margin: 0;
+}
+
+.message--continued .message__gutter {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.message__gutter-time {
+  display: block;
+  white-space: nowrap;
+  line-height: 1.45rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: right;
+  visibility: hidden;
+}
+
+.message:hover .message__gutter-time {
+  visibility: visible;
 }
 
 .message__avatar {
-  flex: none;
+  display: block;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  background: var(--surface-2);
 }
 
 .message__avatar--fallback {
   display: grid;
   place-items: center;
-  background: var(--accent);
+  background: hsl(var(--hue, 235) 60% var(--avatar-l));
   color: #fff;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .message__body {
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 }
 
 .message__meta {
   display: flex;
   align-items: baseline;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .message__author {
-  font-weight: 600;
+  font-weight: 650;
 }
 
-.message__muted {
+.message__time,
+.message__muted,
+.message__edited {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .message__content {
-  margin: 2px 0 0;
+  margin: 2px 0;
+  color: var(--fg-soft);
+  line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.4;
+}
+
+.message__content--deleted {
+  color: var(--muted);
 }
 
 .message__attachments {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
+  margin: 6px 0 4px;
+}
+
+.message__image-link {
+  display: block;
 }
 
 .message__image {
   display: block;
-  max-width: min(400px, 100%);
-  max-height: 300px;
-  border-radius: 4px;
+  max-width: min(420px, 100%);
+  max-height: 320px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 
 .message__file {
-  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-elevated);
+  border-radius: 10px;
+  background: var(--surface-2);
   color: var(--fg);
   text-decoration: none;
+}
+
+.message__file:hover {
+  border-color: var(--accent);
+}
+
+.message__file-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.message__file-text {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.message__file-name {
+  overflow: hidden;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .app__header,
+  .message {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .message {
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .message,
+  .status--live .status__dot::after {
+    animation: none;
+  }
 }
