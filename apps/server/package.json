@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "dev": "prisma migrate deploy && tsx watch --env-file-if-exists=.env src/index.ts",
     "build": "prisma generate && tsc -p tsconfig.build.json",
     "start": "prisma migrate deploy && node dist/index.js",
     "test": "vitest run",

@@ -95,7 +95,7 @@ packages/shared ChatMessage schema (zod), SSE event names, shared types
 pnpm install
 docker compose up -d db                       # Postgres on localhost:5433
 cp apps/server/.env.example apps/server/.env  # then fill in DISCORD_TOKEN and DISCORD_CHANNEL_ID
-pnpm --filter @app/server exec prisma migrate dev
+pnpm --filter @app/server exec prisma migrate dev   # optional: `pnpm dev` also applies pending migrations
 pnpm dev                                      # API on :3000, web on http://localhost:5173
 ```
 
